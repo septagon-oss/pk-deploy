@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "pk.block-manifest.v1",
+  "repository": "pk-deploy",
+  "blocks": [
+    {
+      "id": "pk-deploy.plan",
+      "kind": "contract",
+      "owner": "platformkit-oss",
+      "version": "0.0.0",
+      "package": "pkg/deploy",
+      "status": "composable",
+      "contracts": ["Plan", "Application", "Environment", "Artifact", "Gate", "Check", "Step"],
+      "compositionLaws": ["identity", "closure", "determinism", "substitution", "evidence"],
+      "extensionPoints": ["artifact kinds", "gate kinds", "check kinds", "step executors", "worker selectors"],
+      "evidence": ["pkg/deploy/deploy_test.go", "docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": "pk-deploy.job",
+      "kind": "security",
+      "owner": "platformkit-oss",
+      "version": "0.0.0",
+      "package": "pkg/job",
+      "status": "composable",
+      "contracts": ["Job", "SignedJob", "Signer", "Verifier", "KeyResolver"],
+      "compositionLaws": ["identity", "determinism", "least privilege", "evidence"],
+      "extensionPoints": ["key resolution", "signing algorithm", "clock"],
+      "evidence": ["pkg/job/signing_test.go", "docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": "pk-deploy.worker",
+      "kind": "runtime",
+      "owner": "platformkit-oss",
+      "version": "0.0.0",
+      "package": "pkg/worker",
+      "status": "composable",
+      "contracts": ["Source", "Executor", "Registry", "Runner", "Result"],
+      "compositionLaws": ["closure", "determinism", "substitution", "least privilege", "evidence"],
+      "extensionPoints": ["job source", "executor registry", "evidence recorder", "metrics collector"],
+      "evidence": ["pkg/worker/worker_test.go", "docs/SYNOLOGY_CLUSTER_TOPOLOGY.md"]
+    },
+    {
+      "id": "pk-deploy.evidence",
+      "kind": "audit",
+      "owner": "platformkit-oss",
+      "version": "0.0.0",
+      "package": "pkg/evidence",
+      "status": "composable",
+      "contracts": ["Bundle", "Recorder", "MemoryRecorder"],
+      "compositionLaws": ["identity", "closure", "determinism", "evidence"],
+      "extensionPoints": ["durable recorder", "object store", "audit sink"],
+      "evidence": ["pkg/evidence/evidence_test.go", "docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": "pk-deploy.metrics",
+      "kind": "observability",
+      "owner": "platformkit-oss",
+      "version": "0.0.0",
+      "package": "pkg/metrics",
+      "status": "composable",
+      "contracts": ["Collector", "Snapshot", "ServeHTTP"],
+      "compositionLaws": ["determinism", "substitution", "evidence"],
+      "extensionPoints": ["Prometheus scrape", "OpenTelemetry bridge", "host labels"],
+      "evidence": ["pkg/metrics/metrics_test.go", "docs/SYNOLOGY_CLUSTER_TOPOLOGY.md"]
+    }
+  ]
+}

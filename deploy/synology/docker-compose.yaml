@@ -1,0 +1,19 @@
+services:
+  controlplane:
+    image: ${PK_DEPLOY_IMAGE}
+    restart: unless-stopped
+    environment:
+      PK_DEPLOY_BIND: ":8080"
+      PK_DEPLOY_KEY_ID: ${PK_DEPLOY_KEY_ID}
+      PK_DEPLOY_SHARED_SECRET: ${PK_DEPLOY_SHARED_SECRET}
+      PK_DEPLOY_ADMIN_TOKEN: ${PK_DEPLOY_ADMIN_TOKEN}
+      PK_DEPLOY_ENVIRONMENT_ID: ${PK_DEPLOY_ENVIRONMENT_ID}
+      PK_DEPLOY_INVENTORY_NAMESPACES: ${PK_DEPLOY_INVENTORY_NAMESPACES}
+    ports:
+      - "${PK_DEPLOY_HTTP_PORT}:8080"
+    networks:
+      - pk-deploy
+
+networks:
+  pk-deploy:
+    driver: bridge

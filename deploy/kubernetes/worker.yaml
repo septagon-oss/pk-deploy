@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pk-deploy
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pk-deploy-worker
+  namespace: pk-deploy
+type: Opaque
+stringData:
+  PK_DEPLOY_KEY_ID: synology-staging
+  PK_DEPLOY_SHARED_SECRET: replace-with-at-least-32-bytes
+  PK_DEPLOY_REGISTRY_USERNAME: replace-with-registry-username
+  PK_DEPLOY_REGISTRY_PASSWORD: replace-with-registry-password
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pk-deploy-worker
+  namespace: pk-deploy
+  labels:
+    app.kubernetes.io/name: pk-deploy-worker
+    app.kubernetes.io/part-of: pk-deploy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pk-deploy-worker
+  namespace: platformkit-staging
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pk-deploy-worker
+  namespace: platformkit-staging
+subjects:
+  - kind: ServiceAccount
+    name: pk-deploy-worker
+    namespace: pk-deploy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pk-deploy-worker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pk-deploy-worker
+  namespace: pk-deploy
+  labels:
+    app.kubernetes.io/name: pk-deploy-worker
+    app.kubernetes.io/part-of: pk-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pk-deploy-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pk-deploy-worker
+        app.kubernetes.io/part-of: pk-deploy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: pk-deploy-worker
+      automountServiceAccountToken: true
+      imagePullSecrets:
+        - name: gitea-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: 192.168.1.200:3000/atlantis/pk-deploy:latest-arm64
+          imagePullPolicy: Always
+          command:
+            - /usr/local/bin/pk-deploy-worker
+          env:
+            - name: PK_DEPLOY_CONTROL_URL
+              value: http://192.168.1.200:19090
+            - name: PK_DEPLOY_WORKER_BIND
+              value: ":8080"
+            - name: PK_DEPLOY_WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: PK_DEPLOY_WORKER_CAPABILITIES
+              value: noop,http.get,kubernetes.inventory,kubernetes.set-image
+            - name: PK_DEPLOY_WORKER_LABELS
+              value: environment=staging
+            - name: PK_DEPLOY_POLL_INTERVAL
+              value: 5s
+            - name: PK_DEPLOY_K8S_NAMESPACES
+              value: platformkit-staging
+            - name: PK_DEPLOY_REGISTRY_SCHEME
+              value: http
+          envFrom:
+            - secretRef:
+                name: pk-deploy-worker
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pk-deploy-worker
+  namespace: pk-deploy
+  labels:
+    app.kubernetes.io/name: pk-deploy-worker
+    app.kubernetes.io/part-of: pk-deploy
+spec:
+  selector:
+    app.kubernetes.io/name: pk-deploy-worker
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
