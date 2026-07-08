@@ -409,8 +409,10 @@ func (c registryClient) httpClient() *http.Client {
 	return &http.Client{Timeout: 10 * time.Second}
 }
 
-var semverPrefix = regexp.MustCompile(`^v?([0-9]+)\.([0-9]+)\.([0-9]+)`)
-var releaseSequence = regexp.MustCompile(`(?:^|[-_.])([0-9]{14})(?:$|[-_.])`)
+var (
+	semverPrefix    = regexp.MustCompile(`^v?([0-9]+)\.([0-9]+)\.([0-9]+)`)
+	releaseSequence = regexp.MustCompile(`(?:^|[-_.])([0-9]{14})(?:$|[-_.])`)
+)
 
 func latestTag(tags []string, currentTag string) (string, error) {
 	if len(tags) == 0 {
