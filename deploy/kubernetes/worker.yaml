@@ -102,7 +102,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: PK_DEPLOY_WORKER_CAPABILITIES
-              value: noop,http.get,kubernetes.inventory,kubernetes.set-image
+              value: http.get,kubernetes.inventory,kubernetes.set-image
             - name: PK_DEPLOY_WORKER_LABELS
               value: environment=staging
             - name: PK_DEPLOY_POLL_INTERVAL

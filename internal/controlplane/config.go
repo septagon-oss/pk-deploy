@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package controlplane
 
 import (
@@ -49,8 +53,8 @@ func loadSecret(raw string) ([]byte, error) {
 	if raw == "" {
 		return nil, errors.New("PK_DEPLOY_SHARED_SECRET is required")
 	}
-	if strings.HasPrefix(raw, "base64:") {
-		decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(raw, "base64:"))
+	if after, ok := strings.CutPrefix(raw, "base64:"); ok {
+		decoded, err := base64.StdEncoding.DecodeString(after)
 		if err != nil {
 			return nil, fmt.Errorf("decode PK_DEPLOY_SHARED_SECRET: %w", err)
 		}

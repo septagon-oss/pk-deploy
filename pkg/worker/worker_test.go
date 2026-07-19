@@ -1,3 +1,7 @@
+// Validates: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package worker
 
 import (
@@ -123,6 +127,24 @@ func TestRunnerRunOnceFailsOnMissingExecutor(t *testing.T) {
 	}
 	if result.Status != deploy.StatusFailed || !strings.Contains(result.Message, "not registered") {
 		t.Fatalf("result = %#v, want missing executor failure", result)
+	}
+}
+
+func TestRunnerRunOnceRejectsNilMetricsCollectorBeforeClaim(t *testing.T) {
+	t.Parallel()
+
+	source := &memorySource{}
+	_, err := Runner{
+		Info:      Info{ID: "worker-1"},
+		Source:    source,
+		Verifier:  VerifierFunc(func(context.Context, job.SignedJob) (job.Job, error) { return job.Job{}, nil }),
+		Executors: NewRegistry(),
+	}.RunOnce(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "worker metrics collector is required") {
+		t.Fatalf("RunOnce() error = %v, want missing metrics collector error", err)
+	}
+	if source.claimed {
+		t.Fatal("source was claimed before runner configuration validation")
 	}
 }
 

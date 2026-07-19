@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 // Package job signs and verifies deployment jobs before workers execute them.
 package job
 
@@ -16,7 +20,7 @@ import (
 type Job struct {
 	ID        string                `json:"id"`
 	Plan      deploy.Plan           `json:"plan"`
-	Selector  deploy.WorkerSelector `json:"selector,omitempty"`
+	Selector  deploy.WorkerSelector `json:"selector"`
 	IssuedAt  time.Time             `json:"issuedAt"`
 	ExpiresAt time.Time             `json:"expiresAt"`
 	Nonce     string                `json:"nonce"`

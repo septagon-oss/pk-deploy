@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package worker
 
 import (
@@ -174,6 +178,9 @@ func (r Runner) validate() error {
 	}
 	if r.Executors == nil {
 		errs = append(errs, errors.New("worker executor registry is required"))
+	}
+	if r.Metrics == nil {
+		errs = append(errs, errors.New("worker metrics collector is required"))
 	}
 	return errors.Join(errs...)
 }

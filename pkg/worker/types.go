@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 // Package worker executes signed deployment jobs with runtime-local adapters.
 package worker
 

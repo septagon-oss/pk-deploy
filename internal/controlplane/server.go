@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package controlplane
 
 import (
@@ -56,7 +60,6 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/status", s.handleStatus)
 	s.mux.HandleFunc("POST /api/jobs", s.handleCreateJob)
 	s.mux.HandleFunc("POST /api/jobs/inventory", s.handleInventoryJob)
-	s.mux.HandleFunc("POST /api/jobs/sample", s.handleSampleJob)
 	s.mux.HandleFunc("POST /api/components/update", s.handleComponentUpdate)
 	s.mux.HandleFunc("POST /api/claim", s.handleClaim)
 	s.mux.HandleFunc("POST /api/complete", s.handleComplete)
@@ -97,24 +100,6 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	signed, err := job.Sign(raw, s.cfg.KeyID, s.cfg.Secret)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("sign job: %v", err), http.StatusBadRequest)
-		return
-	}
-	if err := s.store.Enqueue(signed); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, signed, http.StatusCreated)
-}
-
-func (s *Server) handleSampleJob(w http.ResponseWriter, r *http.Request) {
-	if !s.authorized(r) {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-	now := s.now()
-	signed, err := job.Sign(sampleJob(now), s.cfg.KeyID, s.cfg.Secret)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("sign sample job: %v", err), http.StatusInternalServerError)
 		return
 	}
 	if err := s.store.Enqueue(signed); err != nil {
@@ -222,51 +207,6 @@ func (s *Server) authorized(r *http.Request) bool {
 		got = r.URL.Query().Get("token")
 	}
 	return subtle.ConstantTimeCompare([]byte(got), []byte(s.cfg.AdminToken)) == 1
-}
-
-func sampleJob(now time.Time) job.Job {
-	return job.Job{
-		ID: "sample-" + now.Format("20060102T150405Z"),
-		Plan: deploy.Plan{
-			ID: "sample-plan-" + now.Format("20060102T150405Z"),
-			Application: deploy.Application{
-				ID:   "pk-deploy-smoke",
-				Name: "pk-deploy smoke",
-			},
-			Environment: deploy.Environment{
-				ID:   "staging",
-				Name: "Staging",
-			},
-			Artifacts: []deploy.Artifact{{
-				ID:     "pk-deploy-runtime",
-				Kind:   "container-image",
-				Ref:    "pk-deploy:local",
-				Digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-			}},
-			Gates: []deploy.Gate{{
-				ID:       "operator-requested",
-				Kind:     "manual",
-				Required: true,
-				Status:   deploy.StatusSucceeded,
-			}},
-			Steps: []deploy.Step{{
-				ID:       "worker-roundtrip",
-				Executor: "noop",
-				Action:   "succeed",
-				Inputs: map[string]string{
-					"message": "worker reached the control plane and completed a signed job",
-				},
-			}},
-			CreatedAt: now,
-		},
-		Selector: deploy.WorkerSelector{
-			Capabilities: []string{"noop"},
-			Labels:       map[string]string{"environment": "staging"},
-		},
-		IssuedAt:  now,
-		ExpiresAt: now.Add(15 * time.Minute),
-		Nonce:     "nonce-" + now.Format("20060102T150405.000000000Z"),
-	}
 }
 
 func (s *Server) inventoryJob(now time.Time) job.Job {

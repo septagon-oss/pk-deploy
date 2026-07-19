@@ -1,3 +1,7 @@
+// Validates: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package main
 
 import (

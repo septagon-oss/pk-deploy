@@ -56,9 +56,9 @@ The seed runtime ships two binaries in one image:
 
 The control plane runs on Synology through
 `deploy/synology/docker-compose.yaml`. The worker runs in Kubernetes through
-`deploy/kubernetes/worker.yaml` and starts with safe `noop` and `http.get`
-executors only. Flux, Helm, and kubectl executors should be added as separate
-adapter packages once the signed round-trip is proven in staging.
+`deploy/kubernetes/worker.yaml` and exposes only the concrete `http.get`,
+`kubernetes.inventory`, and `kubernetes.set-image` executors. Additional
+deployment engines belong in separate adapter packages.
 
 ## Minimum Dashboard
 

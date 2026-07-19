@@ -1,3 +1,7 @@
+// Validates: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package workerclient
 
 import (
@@ -40,7 +44,7 @@ func TestSourceClaimAndComplete(t *testing.T) {
 				ID:          "plan-1",
 				Application: deploy.Application{ID: "app"},
 				Environment: deploy.Environment{ID: "staging"},
-				Steps:       []deploy.Step{{ID: "deploy", Executor: "noop", Action: "succeed"}},
+				Steps:       []deploy.Step{{ID: "inventory", Executor: "kubernetes.inventory", Action: "list-deployments"}},
 				CreatedAt:   now,
 			},
 			IssuedAt:  now,

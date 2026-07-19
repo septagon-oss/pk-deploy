@@ -1,3 +1,7 @@
+// Implements: REQ-INFRA-006.
+// Per: ADR-0029.
+// Discipline: C-14.
+
 package main
 
 import (
@@ -24,7 +28,6 @@ func main() {
 		log.Fatal(err)
 	}
 	registry := worker.NewRegistry()
-	must(registry.Register("noop", worker.ExecutorFunc(noopExecutor)))
 	must(registry.Register("http.get", worker.ExecutorFunc(httpGetExecutor)))
 	must(registry.Register("kubernetes.inventory", worker.ExecutorFunc(kubernetesInventoryExecutor)))
 	must(registry.Register("kubernetes.set-image", worker.ExecutorFunc(kubernetesSetImageExecutor)))
@@ -87,7 +90,7 @@ func loadConfig() (config, error) {
 		pollInterval: interval,
 		info: worker.Info{
 			ID:           valueOr(os.Getenv("PK_DEPLOY_WORKER_ID"), "pk-deploy-worker"),
-			Capabilities: parseCSV(valueOr(os.Getenv("PK_DEPLOY_WORKER_CAPABILITIES"), "noop,http.get,kubernetes.inventory,kubernetes.set-image")),
+			Capabilities: parseCSV(valueOr(os.Getenv("PK_DEPLOY_WORKER_CAPABILITIES"), "http.get,kubernetes.inventory,kubernetes.set-image")),
 			Labels:       parseLabels(valueOr(os.Getenv("PK_DEPLOY_WORKER_LABELS"), "environment=staging")),
 		},
 	}
@@ -125,16 +128,6 @@ func verifier(keyID string, secret []byte) worker.Verifier {
 			return secret, nil
 		}), time.Now().UTC())
 	})
-}
-
-func noopExecutor(_ context.Context, req worker.ExecuteRequest) (deploy.StepResult, error) {
-	return deploy.StepResult{
-		Message: req.Step.Inputs["message"],
-		Outputs: map[string]string{
-			"worker": req.Worker.ID,
-			"action": req.Step.Action,
-		},
-	}, nil
 }
 
 func httpGetExecutor(ctx context.Context, req worker.ExecuteRequest) (deploy.StepResult, error) {
