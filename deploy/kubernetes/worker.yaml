@@ -88,13 +88,15 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: 192.168.1.200:3000/atlantis/pk-deploy:latest-arm64
+          # Replace with the image reference your registry serves.
+          image: registry.example.com/pk-deploy:latest-arm64
           imagePullPolicy: Always
           command:
             - /usr/local/bin/pk-deploy-worker
           env:
+            # Replace with the URL your control plane listens on.
             - name: PK_DEPLOY_CONTROL_URL
-              value: http://192.168.1.200:19090
+              value: http://control-plane.example.com:19090
             - name: PK_DEPLOY_WORKER_BIND
               value: ":8080"
             - name: PK_DEPLOY_WORKER_ID
